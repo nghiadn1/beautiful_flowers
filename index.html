@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flower Shader</title>
-  <link rel="stylesheet" href="../style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flower WebGL</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
@@ -14,7 +14,6 @@
 
   <div class="name"></div>
 
-  <!-- Fragment Shader -->
   <script type="x-shader/x-fragment" id="fragmentShader">
     #define PI 3.14159265359
 
@@ -24,6 +23,7 @@
     uniform float u_clean;
     uniform float u_fade;
     uniform vec2 u_stop_randomizer;
+
     uniform sampler2D u_texture;
     varying vec2 vUv;
 
@@ -56,7 +56,8 @@
 
     float get_flower_shape(vec2 _p, float _pet_n, float _angle, float _outline) {
         _angle *= 3.;
-        _p = vec2(_p.x * cos(_angle) - _p.y * sin(_angle), _p.x * sin(_angle) + _p.y * cos(_angle));
+        _p = vec2(_p.x * cos(_angle) - _p.y * sin(_angle),
+                  _p.x * sin(_angle) + _p.y * cos(_angle));
         float a = atan(_p.y, _p.x);
         float flower_sectoral_shape = pow(abs(sin(a * _pet_n)), .4) + .25;
         vec2 flower_size_range = vec2(.03, .1);
@@ -85,48 +86,53 @@
         float right = 1. - smoothstep(0., _w, _p.x);
         float stem_shape = left * right;
         float grow_time = 1. - smoothstep(0., .2, u_stop_time);
-        float stem_top_mask = smoothstep(0., pow(grow_time, .5), .03 - _p.y);
+        float stem_top_mask = smoothstep(0., pow(grow_time, .5), .03 -_p.y);
         stem_shape *= stem_top_mask;
         stem_shape *= (1. - step(.17, u_stop_time));
         return stem_shape;
     }
 
     void main() {
-      vec3 base = texture2D(u_texture, vUv).xyz;
-      vec2 uv = vUv;
-      uv.x *= u_ratio;
-      vec2 cursor = vUv - u_cursor.xy;
-      cursor.x *= u_ratio;
-      vec3 stem_color = vec3(.1 + u_stop_randomizer[0] * .6, .6, .2);
-      vec3 flower_color = vec3(.6 + .5 * u_stop_randomizer[1], .1, .9 - .5 * u_stop_randomizer[1]);
-      float angle = .5 * (u_stop_randomizer[0] - .5);
-      float stem_shape = get_stem_shape(cursor, uv, .003, angle);
-      stem_shape += get_stem_shape(cursor + vec2(0., .2 + .5 * u_stop_randomizer[0]), uv, .003, angle);
-      float stem_mask = 1. - get_stem_shape(cursor, uv, .004, angle);
-      stem_mask -= get_stem_shape(cursor + vec2(0., .2 + .5 * u_stop_randomizer[0]), uv, .004, angle);
-      float petals_back_number = 1. + floor(u_stop_randomizer[0] * 2.);
-      float angle_offset = -(2. * step(0., angle) - 1.) * .1 * u_stop_time;
-      float flower_back_shape = get_flower_shape(cursor, petals_back_number, angle + angle_offset, 1.5);
-      float flower_back_mask = 1. - get_flower_shape(cursor, petals_back_number, angle + angle_offset, 1.6);
-      float petals_front_number = 2. + floor(u_stop_randomizer[1] * 2.);
-      float flower_front_shape = get_flower_shape(cursor, petals_front_number, angle, 1.);
-      float flower_front_mask = 1. - get_flower_shape(cursor, petals_front_number, angle, .95);
-      vec3 color = base;
-      color *= stem_mask;
-      color *= flower_back_mask;
-      color *= flower_front_mask;
-      color += (stem_shape * stem_color);
-      color += (flower_back_shape * (flower_color + vec3(0., .8 * u_stop_time, 0.)));
-      color += (flower_front_shape * flower_color);
-      color.r *= 1. - (.5 * flower_back_shape * flower_front_shape);
-      color.b *= 1. - (flower_back_shape * flower_front_shape);
-      color *= u_fade;
-      color *= u_clean;
-      gl_FragColor = vec4(color, 1.);
+        vec3 base = texture2D(u_texture, vUv).xyz;
+        vec2 uv = vUv;
+        uv.x *= u_ratio;
+        vec2 cursor = vUv - u_cursor.xy;
+        cursor.x *= u_ratio;
+
+        vec3 stem_color = vec3(.1 + u_stop_randomizer[0] * .6, .6, .2);
+        vec3 flower_color = vec3(0.2, 0.4, 1.0); // BLUE FLOWERS
+
+        float angle = .5 * (u_stop_randomizer[0] - .5);
+        float stem_shape = get_stem_shape(cursor, uv, .003, angle);
+        stem_shape += get_stem_shape(cursor + vec2(0., .2 + .5 * u_stop_randomizer[0]), uv, .003, angle);
+        float stem_mask = 1. - get_stem_shape(cursor, uv, .004, angle);
+        stem_mask -= get_stem_shape(cursor + vec2(0., .2 + .5 * u_stop_randomizer[0]), uv, .004, angle);
+
+        float petals_back_number = 1. + floor(u_stop_randomizer[0] * 2.);
+        float angle_offset = -(2. * step(0., angle) - 1.) * .1 * u_stop_time;
+        float flower_back_shape = get_flower_shape(cursor, petals_back_number, angle + angle_offset, 1.5);
+        float flower_back_mask = 1. - get_flower_shape(cursor, petals_back_number, angle + angle_offset, 1.6);
+
+        float petals_front_number = 2. + floor(u_stop_randomizer[1] * 2.);
+        float flower_front_shape = get_flower_shape(cursor, petals_front_number, angle, 1.);
+        float flower_front_mask = 1. - get_flower_shape(cursor, petals_front_number, angle, .95);
+
+        vec3 color = base;
+        color *= stem_mask;
+        color *= flower_back_mask;
+        color *= flower_front_mask;
+        color += (stem_shape * stem_color);
+        color += (flower_back_shape * (flower_color + vec3(0., .8 * u_stop_time, 0.)));
+        color += (flower_front_shape * flower_color);
+        color.r *= 1. - (.5 * flower_back_shape * flower_front_shape);
+        color.b *= 1. - (flower_back_shape * flower_front_shape);
+        color *= u_fade;
+        color *= u_clean;
+
+        gl_FragColor = vec4(color, 1.);
     }
   </script>
 
-  <!-- Vertex Shader -->
   <script type="x-shader/x-vertex" id="vertexShader">
     varying vec2 vUv;
     void main() {
@@ -135,7 +141,6 @@
     }
   </script>
 
-  <!-- Three.js script loaded via module -->
-  <script type="module" src="../js.js"></script>
+  <script type="module" src="js.js"></script>
 </body>
 </html>
